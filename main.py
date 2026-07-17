@@ -1,5 +1,4 @@
-def main():
-    print("Hello from cloud-control-api!")
+from app.main import app
 
 
 if __name__ == "__main__":

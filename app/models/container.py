@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -19,7 +19,7 @@ class Container(TimestampMixin, Base):
     __tablename__ = "containers"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    
+
     environment_id: Mapped[str] = mapped_column(
         ForeignKey("environments.id", ondelete="CASCADE"),
         nullable=False,
@@ -32,7 +32,7 @@ class Container(TimestampMixin, Base):
     last_known_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
     
     environment: Mapped[Environment] = relationship(back_populates="containers")
-    
+
     headscale_node: Mapped[HeadscaleNode | None] = relationship(
         back_populates="container",
         cascade="all, delete-orphan",

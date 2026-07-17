@@ -18,7 +18,7 @@ class Connection(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    container_id: Mapped[str] = mapped_column(
+    container_id: Mapped[int] = mapped_column(
         ForeignKey("containers.id", ondelete="CASCADE"),
         nullable=False,
     )
