@@ -1,0 +1,14 @@
+[project]
+name = "cloud-control-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.18.5",
+    "fastapi>=0.139.2",
+    "psycopg2-binary>=2.9.12",
+    "pydantic-settings>=2.14.2",
+    "sqlalchemy>=2.0.51",
+    "uvicorn>=0.51.0",
+]
