@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.db.database import get_db
 from app.dtos.auth import LoginDTO, LoginResponseDTO, RegisterDTO, UserResponseDTO
 from app.services.authentication_service import AuthenticationService
 from app.services.user_service import UserService

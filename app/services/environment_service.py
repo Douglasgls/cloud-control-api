@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -33,3 +34,6 @@ class EnvironmentService:
             last_ping=environment.last_ping,
             environment_token=environment_token,
         )
+
+    def update_status(self, environment_id: str, status_online: bool, last_ping: datetime | None = None) -> None:
+        self.environments.update_status(environment_id, status_online, last_ping)

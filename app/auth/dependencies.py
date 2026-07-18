@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.jwt import decode_access_token
 from app.auth.schemas import AgentTokenPayload, TokenPayload
-from app.core.database import get_db
+from app.db.database import get_db
 from app.models.environment import Environment
 from app.models.user import User
 from app.repositories.environment_repository import EnvironmentRepository

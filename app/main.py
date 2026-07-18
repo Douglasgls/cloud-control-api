@@ -5,8 +5,9 @@ from fastapi import FastAPI
 from app.controllers.auth import router as auth_router
 from app.controllers.agent import router as agent_router
 from app.controllers.environments import router as environments_router
+from app.realtime.websocket import router as realtime_router
 from app.core.config import get_settings
-from app.core.database import create_database_schema
+from app.db.database import create_database_schema
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(agent_router)
 app.include_router(environments_router)
+app.include_router(realtime_router)
 
 
 @app.get("/health", tags=["Health"])
