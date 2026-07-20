@@ -4,9 +4,9 @@ from app.models.access_token import AccessToken
 from app.models.audit_log import AuditLog
 from app.models.base import Base
 from app.models.connection import Connection
-from app.models.container import Container
+from app.models.published_container import PublishedContainer
 from app.models.environment import Environment
-from app.models.headscale_node import HeadscaleNode
+from app.models.published_node import PublishedNode
 from app.models.user import User
 
 __all__ = [
@@ -14,8 +14,8 @@ __all__ = [
     "AuditLog",
     "Base",
     "Connection",
-    "Container",
+    "PublishedContainer",
     "Environment",
-    "HeadscaleNode",
+    "PublishedNode",
     "User",
 ]

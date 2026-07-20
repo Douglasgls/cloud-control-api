@@ -11,7 +11,7 @@ from uuid import uuid4
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.container import Container
+    from app.models.published_container import PublishedContainer
     from app.models.user import User
 
 
@@ -36,7 +36,7 @@ class Environment(TimestampMixin, Base):
     last_ping: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     user: Mapped[User] = relationship(back_populates="environments")
-    containers: Mapped[list[Container]] = relationship(
+    published_containers: Mapped[list[PublishedContainer]] = relationship(
         back_populates="environment",
         cascade="all, delete-orphan",
     )

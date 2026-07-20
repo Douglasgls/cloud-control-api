@@ -34,7 +34,6 @@ async def get_token(
 
 
 @router.websocket("/agent")
-@router.websocket("/agent/")
 async def websocket_endpoint(
     websocket: WebSocket,
     token: Annotated[str, Depends(get_token)]

@@ -10,7 +10,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.access_token import AccessToken
-    from app.models.container import Container
+    from app.models.published_container import PublishedContainer
 
 
 class Connection(TimestampMixin, Base):
@@ -18,8 +18,8 @@ class Connection(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    container_id: Mapped[int] = mapped_column(
-        ForeignKey("containers.id", ondelete="CASCADE"),
+    published_container_id: Mapped[int] = mapped_column(
+        ForeignKey("published_containers.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -30,5 +30,5 @@ class Connection(TimestampMixin, Base):
 
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    container: Mapped[Container] = relationship(back_populates="connections")
+    published_container: Mapped[PublishedContainer] = relationship(back_populates="connections")
     access_token: Mapped[AccessToken] = relationship(back_populates="connections")
