@@ -29,8 +29,12 @@ class RealtimeManager:
 
     async def _sync_environment(self, connection: Connection) -> None:
         try:
+            print(f"\n[SYNC ENVIADO] Enviando pedido de sync (environment.sync) para o ambiente: {connection.environment_id}\n")
             logger.info(f"Sending environment.sync request to environment {connection.environment_id}")
-            response = await connection.request("environment.sync", {})
+            response = await self.connection_manager.request_environment_sync(connection)
+            
+            print(f"\n[SYNC RECEBIDO] Resposta de sync recebida com sucesso={response.get('success')} para o ambiente: {connection.environment_id}")
+            print(f"Dados do Snapshot recebido: {response}\n")
             
             if response.get("success"):
                 logger.info(f"Received environment.sync response for {connection.environment_id}. Syncing database...")
@@ -44,6 +48,9 @@ class RealtimeManager:
                 
         except Exception as e:
             logger.error(f"Failed to sync environment {connection.environment_id}: {str(e)}", exc_info=True)
+
+    def trigger_environment_sync(self, connection: Connection) -> None:
+        asyncio.create_task(self._sync_environment(connection))
 
     async def start(self, websocket: WebSocket, environment_id: str, user_id: int) -> None:
         await websocket.accept()
@@ -60,7 +67,7 @@ class RealtimeManager:
         self._update_environment_status(environment_id, is_online=True, last_ping=now)
         
         # Initiate environment sync as a background task
-        asyncio.create_task(self._sync_environment(connection))
+        self.trigger_environment_sync(connection)
 
         try:
             while True:

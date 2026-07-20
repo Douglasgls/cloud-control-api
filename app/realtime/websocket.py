@@ -10,6 +10,7 @@ from app.realtime.dispatcher import Dispatcher
 from app.realtime.manager import RealtimeManager
 from app.realtime.handlers.heartbeat import HeartbeatHandler
 from app.realtime.handlers.system import SystemHandler
+from app.realtime.handlers.event_handler import EventHandler
 
 router = APIRouter(prefix="/ws", tags=["Realtime"])
 
@@ -23,6 +24,11 @@ dispatcher.register("heartbeat", HeartbeatHandler.handle)
 dispatcher.register("system.info", SystemHandler.handle_info)
 
 realtime_manager = RealtimeManager(connection_manager, dispatcher)
+
+# Register event handlers
+event_handler = EventHandler(realtime_manager)
+dispatcher.register("event.publish", event_handler.handle)
+dispatcher.register("environment.changed", event_handler.handle)
 
 
 async def get_token(

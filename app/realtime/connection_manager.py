@@ -39,3 +39,7 @@ class ConnectionManager:
 
     def list_connections(self) -> list[Connection]:
         return list(self.active_connections.values())
+
+    async def request_environment_sync(self, connection: Connection) -> dict:
+        return await connection.request("environment.sync", {})
+

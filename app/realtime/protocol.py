@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 
 class WebSocketMessage(BaseModel):
-    request_id: str
+    request_id: str | None = None
     origin: str
     type: str
     payload: dict[str, Any] = Field(default_factory=dict)
