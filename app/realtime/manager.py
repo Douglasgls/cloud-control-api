@@ -37,8 +37,11 @@ class RealtimeManager:
             print(f"Dados do Snapshot recebido: {response}\n")
             
             if response.get("success"):
-                logger.info(f"Received environment.sync response for {connection.environment_id}. Syncing database...")
-                snapshot = EnvironmentSnapshotDTO.model_validate(response.get("payload", {}))
+                payload = response.get("payload", {})
+                logger.info(f"Received environment.sync response for {connection.environment_id}. Payload keys: {list(payload.keys())}")
+                snapshot = EnvironmentSnapshotDTO.model_validate(payload)
+                print(f"[SYNC PARSED] Containers parsed from snapshot: {len(snapshot.published_containers)}")
+                logger.info(f"Parsed snapshot with {len(snapshot.published_containers)} published containers for environment {connection.environment_id}")
                 
                 with SessionLocal() as db:
                     sync_service = EnvironmentSyncService(db)

@@ -1,42 +1,60 @@
 from datetime import datetime
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class PublishedTailscaleNodeSnapshotDTO(BaseModel):
-    installed: bool
-    service_running: bool
-    version: str | None = None
-    machine_id: str | None = None
-    node_key: str | None = None
-    tailscale_ip: str | None = None
-    online: bool
-    last_sync: datetime | str | None = None
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    installed: bool = False
+    service_running: bool = False
+    version: Optional[str] = None
+    machine_id: Optional[str] = None
+    node_key: Optional[str] = None
+    tailscale_ip: Optional[str] = None
+    online: bool = False
+    last_sync: Optional[datetime | str] = None
 
 
 class PublishedAccessTokenSnapshotDTO(BaseModel):
-    id: str
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str = Field(validation_alias=AliasChoices("id", "api_local_token_id", "token_id"))
     token_hash: str
-    created_at: datetime | str | None = None
-    expires_at: datetime | str | None = None
-    active: bool
-    revoked_at: datetime | str | None = None
+    created_at: Optional[datetime | str] = None
+    expires_at: Optional[datetime | str] = None
+    active: bool = True
+    revoked_at: Optional[datetime | str] = None
 
 
 class PublishedContainerSnapshotDTO(BaseModel):
-    api_local_container_id: str
-    container_number: int
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    api_local_container_id: str = Field(
+        validation_alias=AliasChoices("api_local_container_id", "id", "container_id", "api_local_id")
+    )
+    container_number: int = Field(
+        default=0,
+        validation_alias=AliasChoices("container_number", "vmid", "number")
+    )
     name: str
-    status: str
-    tailscale: PublishedTailscaleNodeSnapshotDTO | None = None
+    status: str = "unknown"
+    tailscale: Optional[PublishedTailscaleNodeSnapshotDTO] = None
     access_tokens: list[PublishedAccessTokenSnapshotDTO] = Field(default_factory=list)
 
 
 class EnvironmentDetailsDTO(BaseModel):
-    id: str | None = None
-    registered_at: datetime | str | None = None
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: Optional[str] = None
+    registered_at: Optional[datetime | str] = None
 
 
 class EnvironmentSnapshotDTO(BaseModel):
-    environment: EnvironmentDetailsDTO
-    published_containers: list[PublishedContainerSnapshotDTO] = Field(default_factory=list)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    environment: EnvironmentDetailsDTO = Field(default_factory=EnvironmentDetailsDTO)
+    published_containers: list[PublishedContainerSnapshotDTO] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("published_containers", "containers")
+    )

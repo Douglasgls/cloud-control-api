@@ -13,6 +13,7 @@ class EnvironmentSyncService:
         self.container_sync_service = PublishedContainerSyncService(db)
 
     def sync(self, environment_id: str, snapshot: EnvironmentSnapshotDTO) -> None:
+        print(f"\n[SYNC DB] Iniciando sincronização no banco para o ambiente: {environment_id}")
         logger.info(f"Starting environment sync for environment_id: {environment_id}")
 
         try:
@@ -21,8 +22,10 @@ class EnvironmentSyncService:
                 self.container_sync_service.sync_containers(environment_id, snapshot.published_containers)
             
             self.db.commit()
+            print(f"[SYNC DB] Sincronização concluída e commit realizada com sucesso para o ambiente: {environment_id}\n")
             logger.info(f"Environment synchronized successfully for environment_id: {environment_id}")
         except Exception as e:
             self.db.rollback()
+            print(f"[SYNC DB ERRO] Falha na sincronização do ambiente {environment_id}: {str(e)}\n")
             logger.error(f"Environment sync failed for environment_id {environment_id}: {str(e)}", exc_info=True)
             raise e

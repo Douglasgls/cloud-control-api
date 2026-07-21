@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.client import router as client_router
 from app.controllers.auth import router as auth_router
 from app.controllers.agent import router as agent_router
 from app.controllers.environments import router as environments_router
@@ -28,6 +29,7 @@ app.include_router(auth_router)
 app.include_router(agent_router)
 app.include_router(environments_router)
 app.include_router(realtime_router)
+app.include_router(client_router)
 
 
 @app.get("/health", tags=["Health"])

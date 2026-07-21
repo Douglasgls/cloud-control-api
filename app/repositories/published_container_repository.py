@@ -8,6 +8,9 @@ class PublishedContainerRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
+    def get_by_id(self, container_id: int) -> PublishedContainer | None:
+        return self.db.get(PublishedContainer, container_id)
+
     def get_by_api_local_id(self, environment_id: str, api_local_id: str) -> PublishedContainer | None:
         return self.db.scalar(
             select(PublishedContainer).where(
