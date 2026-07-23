@@ -3,7 +3,9 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.dtos.environment_sync import PublishedTailscaleNodeSnapshotDTO
+from app.models.published_container import PublishedContainer
 from app.models.published_node import PublishedNode
+from app.models.provisioning_status import ProvisioningStatus
 from app.repositories.published_node_repository import PublishedNodeRepository
 
 logger = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ class PublishedNodeSyncService:
         self.db = db
         self.repository = PublishedNodeRepository(db)
 
-    def sync_node(self, published_container_id: int, node_dto: PublishedTailscaleNodeSnapshotDTO | None) -> PublishedNode | None:
+    def sync_node(self, published_container_id: str, node_dto: PublishedTailscaleNodeSnapshotDTO | None) -> PublishedNode | None:
         existing = self.repository.get_by_container_id(published_container_id)
 
         if not node_dto:
@@ -76,7 +78,7 @@ class PublishedNodeSyncService:
                 logger.info(f"Published node updated for container ID: {published_container_id}")
             else:
                 logger.debug(f"Published node synchronized (no changes) for container ID: {published_container_id}")
-            return existing
+            result_node = existing
         else:
             new_node = self.repository.create(
                 published_container_id=published_container_id,
@@ -90,4 +92,43 @@ class PublishedNodeSyncService:
                 last_sync=last_sync
             )
             logger.info(f"Published node created for container ID: {published_container_id}")
-            return new_node
+            result_node = new_node
+
+        # Rule 7: Update PublishedContainer provisioning_status to CONNECTED if node is fully functional
+        is_fully_connected = (
+            bool(node_dto.machine_id)
+            and bool(node_dto.node_key)
+            and bool(node_dto.tailscale_ip)
+            and node_dto.online is True
+        )
+        if is_fully_connected:
+            container = self.db.query(PublishedContainer).filter(PublishedContainer.id == published_container_id).first()
+            if container:
+                if container.provisioning_status != ProvisioningStatus.CONNECTED:
+                    logger.info(f"[NODE SYNC] Container '{published_container_id}' node is fully functional. Updating provisioning_status to CONNECTED.")
+                    container.provisioning_status = ProvisioningStatus.CONNECTED
+                
+                # Sync HeadscaleNode entity into headscale_nodes DB table
+                try:
+                    from app.services.headscale.node_service import HeadscaleNodeService
+                    from app.repositories.headscale_user_repository import HeadscaleUserRepository
+                    
+                    user_repo = HeadscaleUserRepository(self.db)
+                    db_user = user_repo.get_by_environment(container.environment_id)
+                    if db_user:
+                        node_service = HeadscaleNodeService(self.db)
+                        api_nodes = node_service.list(db_user.name)
+                        for n in api_nodes:
+                            if n.name.lower() == container.name.lower() or n.given_name.lower() == container.name.lower() or len(api_nodes) == 1:
+                                node_service.sync_registered_node(
+                                    headscale_user_db_id=db_user.id,
+                                    published_container_id=container.id,
+                                    headscale_node_id=n.id,
+                                    hostname=n.name,
+                                    given_name=n.given_name,
+                                    registered=True,
+                                )
+                except Exception as err:
+                    logger.warning(f"[NODE SYNC] Optional HeadscaleNode DB sync note: {err}")
+
+        return result_node

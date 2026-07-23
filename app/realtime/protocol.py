@@ -13,7 +13,7 @@ class WebSocketResponse(BaseModel):
     request_id: str
     origin: str
     success: bool = True
-    type: str | None = None
+    type: str = "ack"
     payload: dict[str, Any] = Field(default_factory=dict)
 
 

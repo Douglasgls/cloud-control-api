@@ -70,6 +70,7 @@ class EventHandler:
         ack = WebSocketResponse(
             request_id=req_id,
             origin="cloud",
+            type=message.type or "ack",
             success=True,
             payload={}
         )

@@ -1,1 +1,10 @@
 """Camada de acesso a dados."""
+
+from app.repositories.access_token_repository import AccessTokenRepository
+from app.repositories.environment_repository import EnvironmentRepository
+from app.repositories.published_container_repository import PublishedContainerRepository
+from app.repositories.published_node_repository import PublishedNodeRepository
+from app.repositories.user_repository import UserRepository
+from app.repositories.headscale_user_repository import HeadscaleUserRepository
+from app.repositories.headscale_preauth_key_repository import HeadscalePreAuthKeyRepository
+from app.repositories.headscale_node_repository import HeadscaleNodeRepository

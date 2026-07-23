@@ -17,7 +17,7 @@ class AccessTokenRepository:
     def create(
         self,
         *,
-        published_container_id: int,
+        published_container_id: str,
         api_local_token_id: str | None,
         token_hash: str,
         expires_at: datetime | None,

@@ -27,7 +27,7 @@ class AccessTokenSyncService:
         self.db = db
         self.repository = AccessTokenRepository(db)
 
-    def sync_tokens(self, published_container_id: int, tokens_dto: list[PublishedAccessTokenSnapshotDTO]) -> list[AccessToken]:
+    def sync_tokens(self, published_container_id: str, tokens_dto: list[PublishedAccessTokenSnapshotDTO]) -> list[AccessToken]:
         synced_tokens = []
 
         for token_dto in tokens_dto:

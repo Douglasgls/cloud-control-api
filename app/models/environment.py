@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin
 if TYPE_CHECKING:
     from app.models.published_container import PublishedContainer
     from app.models.user import User
+    from app.models.headscale_user import HeadscaleUser
 
 
 class Environment(TimestampMixin, Base):
@@ -39,4 +40,9 @@ class Environment(TimestampMixin, Base):
     published_containers: Mapped[list[PublishedContainer]] = relationship(
         back_populates="environment",
         cascade="all, delete-orphan",
+    )
+    headscale_user: Mapped[HeadscaleUser | None] = relationship(
+        back_populates="environment",
+        cascade="all, delete-orphan",
+        uselist=False,
     )

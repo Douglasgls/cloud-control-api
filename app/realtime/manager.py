@@ -12,6 +12,7 @@ from app.realtime.dispatcher import Dispatcher
 from app.realtime.protocol import WebSocketMessage, WebSocketResponse
 from app.services.environment_service import EnvironmentService
 from app.services.environment_sync_service import EnvironmentSyncService
+from app.services.headscale.provisioning_orchestrator import ProvisioningOrchestrator
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,11 @@ class RealtimeManager:
                 with SessionLocal() as db:
                     sync_service = EnvironmentSyncService(db)
                     sync_service.sync(connection.environment_id, snapshot)
+
+                # Trigger Headscale Provisioning Orchestrator AFTER snapshot commit
+                with SessionLocal() as db:
+                    orchestrator = ProvisioningOrchestrator(db, self.connection_manager)
+                    await orchestrator.orchestrate(connection.environment_id)
             else:
                 logger.error(f"Agent returned error on environment.sync: {response.get('error')}")
                 

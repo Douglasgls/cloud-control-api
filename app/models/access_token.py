@@ -17,7 +17,7 @@ class AccessToken(TimestampMixin, Base):
     __tablename__ = "access_tokens"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    published_container_id: Mapped[int] = mapped_column(
+    published_container_id: Mapped[str] = mapped_column(
         ForeignKey("published_containers.id", ondelete="CASCADE"),
         nullable=False,
     )

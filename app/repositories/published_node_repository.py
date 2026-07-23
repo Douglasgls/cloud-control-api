@@ -9,7 +9,7 @@ class PublishedNodeRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def get_by_container_id(self, published_container_id: int) -> PublishedNode | None:
+    def get_by_container_id(self, published_container_id: str) -> PublishedNode | None:
         return self.db.scalar(
             select(PublishedNode).where(PublishedNode.published_container_id == published_container_id)
         )
@@ -17,7 +17,7 @@ class PublishedNodeRepository:
     def create(
         self,
         *,
-        published_container_id: int,
+        published_container_id: str,
         installed: bool,
         service_running: bool,
         version: str | None = None,

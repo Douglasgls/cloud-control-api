@@ -181,7 +181,7 @@ def test_validation_3_token_expired(db_session):
 
 def test_validation_4_environment_not_found():
     service = ContainerAccessAuthorizationService()
-    token = AccessToken(published_container_id=1, token_hash="h", active=True)
+    token = AccessToken(published_container_id="1", token_hash="h", active=True)
     ctx = AuthorizedConnectionContext(raw_token="r", token_hash="h", access_token=token, environment=None)
     result = service.authorize(ctx)
     assert result.allowed is False
@@ -203,7 +203,7 @@ def test_validation_5_environment_offline(db_session):
 
 def test_validation_6_container_not_found():
     service = ContainerAccessAuthorizationService()
-    token = AccessToken(published_container_id=1, token_hash="h", active=True)
+    token = AccessToken(published_container_id="1", token_hash="h", active=True)
     env = Environment(id="env", user_id=1, name="e", environment_token_hash="h", status_online=True)
     ctx = AuthorizedConnectionContext(raw_token="r", token_hash="h", access_token=token, environment=env, published_container=None)
     result = service.authorize(ctx)

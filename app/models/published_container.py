@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, UniqueConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from uuid import uuid4
+
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
@@ -17,7 +19,11 @@ if TYPE_CHECKING:
 class PublishedContainer(TimestampMixin, Base):
     __tablename__ = "published_containers"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
 
     environment_id: Mapped[str] = mapped_column(
         ForeignKey("environments.id", ondelete="CASCADE"),
@@ -31,6 +37,10 @@ class PublishedContainer(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="unknown")
+    
+    provisioning_status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="PENDING"
+    )
     
     environment: Mapped[Environment] = relationship(back_populates="published_containers")
 
