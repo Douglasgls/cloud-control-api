@@ -12,6 +12,7 @@ from app.models.headscale_user import HeadscaleUser
 from app.models.headscale_preauth_key import HeadscalePreAuthKey
 from app.models.headscale_node import HeadscaleNode
 from app.models.provisioning_status import ProvisioningStatus
+from app.models.connection_status import ConnectionStatus
 
 __all__ = [
     "AccessToken",
@@ -26,5 +27,7 @@ __all__ = [
     "HeadscalePreAuthKey",
     "HeadscaleNode",
     "ProvisioningStatus",
+    "ConnectionStatus",
 ]
+
 

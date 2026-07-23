@@ -291,19 +291,52 @@ def test_validation_all_pass_success(db_session):
 # --- INTEGRATION TESTS: ClientConnectionService & POST /client/connect API ---
 
 def test_api_connect_success(client, db_session):
-    raw_token, _, _, _, _ = create_full_valid_setup(db_session)
+    from unittest.mock import patch
+    from app.models.headscale_user import HeadscaleUser
+    from app.models.headscale_preauth_key import HeadscalePreAuthKey
+    from app.models.connection import Connection
 
-    res = client.post("/client/connect", json={"access_token": raw_token})
+    raw_token, access_token, container, env, node = create_full_valid_setup(db_session)
+
+    hs_user = HeadscaleUser(id="hu-1", environment_id=env.id, headscale_user_id="hs-u1", name=f"env_{env.id}")
+    db_session.add(hs_user)
+    db_session.flush()
+
+    mock_key = HeadscalePreAuthKey(
+        id="key-uuid-1",
+        headscale_user_id=hs_user.id,
+        published_container_id=container.id,
+        headscale_key_id="hk-1",
+        key_name="hs_pk_client_secret_999",
+        reusable=False,
+        ephemeral=False,
+        used=False,
+        expiration=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    db_session.add(mock_key)
+    db_session.commit()
+
+    with patch(
+        "app.services.connection_provision_service.HeadscaleProvisioningService.create_preauth_key",
+        return_value=mock_key,
+    ):
+        res = client.post("/client/connect", json={"access_token": raw_token})
+
     assert res.status_code == 200
     data = res.json()
     assert data["authorized"] is True
     assert data["code"] is None
-    assert data["connection"] == {
-        "login_server": None,
-        "preauth_key": None,
-        "hostname": None,
-        "expires_at": None,
-    }
+    assert data["connection"]["connection_id"] is not None
+    assert data["connection"]["login_server"] is not None
+    assert data["connection"]["preauth_key"] == "hs_pk_client_secret_999"
+    assert data["connection"]["hostname"] == "100.64.0.1"
+    assert data["connection"]["expires_at"] is not None
+
+    conn = db_session.query(Connection).filter(Connection.access_token_id == access_token.id).first()
+    assert conn is not None
+    assert conn.status == "PENDING"
+    assert conn.headscale_preauth_key_id == mock_key.id
+    assert data["connection"]["connection_id"] == conn.id
 
 
 def test_api_connect_token_not_found(client, db_session):
@@ -324,3 +357,111 @@ def test_api_connect_container_offline(client, db_session):
     data = res.json()
     assert data["authorized"] is False
     assert data["code"] == "CONTAINER_OFFLINE"
+
+
+def test_api_confirm_success(client, db_session):
+    from unittest.mock import patch
+    from app.models.headscale_user import HeadscaleUser
+    from app.models.headscale_preauth_key import HeadscalePreAuthKey
+    from app.models.connection import Connection
+
+    raw_token, access_token, container, env, node = create_full_valid_setup(db_session)
+    hs_user = HeadscaleUser(id="hu-2", environment_id=env.id, headscale_user_id="hs-u2", name=f"env_{env.id}")
+    db_session.add(hs_user)
+    db_session.flush()
+
+    mock_key = HeadscalePreAuthKey(
+        id="key-uuid-2",
+        headscale_user_id=hs_user.id,
+        published_container_id=container.id,
+        headscale_key_id="hk-2",
+        key_name="hs_pk_client_secret_888",
+        reusable=False,
+        ephemeral=False,
+        used=False,
+        expiration=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    db_session.add(mock_key)
+    db_session.commit()
+
+    with patch(
+        "app.services.connection_provision_service.HeadscaleProvisioningService.create_preauth_key",
+        return_value=mock_key,
+    ):
+        res_connect = client.post("/client/connect", json={"access_token": raw_token})
+    
+    conn_id = res_connect.json()["connection"]["connection_id"]
+
+    res_confirm = client.post("/client/confirm", json={"connection_id": conn_id})
+    assert res_confirm.status_code == 200
+    confirm_data = res_confirm.json()
+    assert confirm_data["success"] is True
+    assert confirm_data["connection_id"] == conn_id
+    assert confirm_data["status"] == "CONNECTED"
+    assert confirm_data["connected_at"] is not None
+
+    conn = db_session.get(Connection, conn_id)
+    assert conn.status == "CONNECTED"
+    assert conn.connected_at is not None
+
+    # Test idempotency: second confirm returns 200 OK without error
+    res_confirm_2 = client.post("/client/confirm", json={"connection_id": conn_id})
+    assert res_confirm_2.status_code == 200
+    assert res_confirm_2.json()["success"] is True
+    assert res_confirm_2.json()["status"] == "CONNECTED"
+
+
+def test_api_confirm_not_found(client, db_session):
+    res = client.post("/client/confirm", json={"connection_id": 99999})
+    assert res.status_code == 404
+    data = res.json()
+    assert data["success"] is False
+    assert data["code"] == "CONNECTION_NOT_FOUND"
+
+
+def test_api_confirm_expired(client, db_session):
+    from app.models.connection import Connection
+    from app.models.headscale_user import HeadscaleUser
+    from app.models.headscale_preauth_key import HeadscalePreAuthKey
+    from app.models.connection_status import ConnectionStatus
+
+    raw_token, access_token, container, env, node = create_full_valid_setup(db_session)
+    hs_user = HeadscaleUser(id="hu-3", environment_id=env.id, headscale_user_id="hs-u3", name=f"env_{env.id}")
+    db_session.add(hs_user)
+    db_session.flush()
+
+    mock_key = HeadscalePreAuthKey(
+        id="key-uuid-3",
+        headscale_user_id=hs_user.id,
+        published_container_id=container.id,
+        headscale_key_id="hk-3",
+        key_name="hs_pk_expired_777",
+        reusable=False,
+        ephemeral=False,
+        used=False,
+        expiration=datetime.now(timezone.utc) - timedelta(hours=2),
+    )
+    db_session.add(mock_key)
+    db_session.flush()
+
+    conn = Connection(
+        published_container_id=container.id,
+        access_token_id=access_token.id,
+        headscale_preauth_key_id=mock_key.id,
+        status=ConnectionStatus.PENDING,
+        expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+    )
+    db_session.add(conn)
+    db_session.commit()
+
+    res = client.post("/client/confirm", json={"connection_id": conn.id})
+    assert res.status_code == 400
+    data = res.json()
+    assert data["success"] is False
+    assert data["code"] == "CONNECTION_EXPIRED"
+
+    # Verify status in DB was NOT mutated to EXPIRED by request validation
+    db_session.refresh(conn)
+    assert conn.status == ConnectionStatus.PENDING
+
+

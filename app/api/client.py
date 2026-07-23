@@ -6,10 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.dto.client_connection import (
+    ClientConnectionConfirmRequestDTO,
+    ClientConnectionConfirmResponseDTO,
     ClientConnectionRequestDTO,
     ClientConnectionResponseDTO,
     ValidationCode,
 )
+from app.services.client_connection_confirm_service import ClientConnectionConfirmService
 from app.services.client_connection_service import ClientConnectionService
 
 router = APIRouter(prefix="/client", tags=["Client"])
@@ -27,6 +30,8 @@ STATUS_CODE_MAP = {
     ValidationCode.NODE_OFFLINE: status.HTTP_403_FORBIDDEN,
     ValidationCode.TAILSCALE_NOT_INSTALLED: status.HTTP_403_FORBIDDEN,
     ValidationCode.TAILSCALE_SERVICE_STOPPED: status.HTTP_403_FORBIDDEN,
+    ValidationCode.CONNECTION_NOT_FOUND: status.HTTP_404_NOT_FOUND,
+    ValidationCode.CONNECTION_EXPIRED: status.HTTP_400_BAD_REQUEST,
 }
 
 
@@ -56,3 +61,30 @@ def connect_client(
         status_code=status.HTTP_200_OK,
         content=response_dto.model_dump(),
     )
+
+
+@router.post(
+    "/confirm",
+    response_model=ClientConnectionConfirmResponseDTO,
+    summary="Confirm client connection handshake after tailscale up",
+    description="Confirms that client has successfully connected and transitions connection status to CONNECTED.",
+)
+def confirm_client(
+    data: ClientConnectionConfirmRequestDTO,
+    db: DBSession,
+) -> JSONResponse:
+    service = ClientConnectionConfirmService(db)
+    response_dto = service.confirm(data)
+
+    if not response_dto.success:
+        http_status = STATUS_CODE_MAP.get(response_dto.code, status.HTTP_400_BAD_REQUEST)
+        return JSONResponse(
+            status_code=http_status,
+            content=response_dto.model_dump(),
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=response_dto.model_dump(),
+    )
+

@@ -22,6 +22,8 @@ class ValidationCode(str, Enum):
     TAILSCALE_NOT_INSTALLED = "TAILSCALE_NOT_INSTALLED"
     TAILSCALE_SERVICE_STOPPED = "TAILSCALE_SERVICE_STOPPED"
     NODE_OFFLINE = "NODE_OFFLINE"
+    CONNECTION_NOT_FOUND = "CONNECTION_NOT_FOUND"
+    CONNECTION_EXPIRED = "CONNECTION_EXPIRED"
 
 
 class ClientConnectionRequestDTO(BaseModel):
@@ -29,6 +31,7 @@ class ClientConnectionRequestDTO(BaseModel):
 
 
 class ConnectionInstructionsDTO(BaseModel):
+    connection_id: Optional[int] = None
     login_server: Optional[str] = None
     preauth_key: Optional[str] = None
     hostname: Optional[str] = None
@@ -40,6 +43,20 @@ class ClientConnectionResponseDTO(BaseModel):
     code: Optional[ValidationCode] = None
     message: Optional[str] = None
     connection: ConnectionInstructionsDTO = Field(default_factory=ConnectionInstructionsDTO)
+
+
+class ClientConnectionConfirmRequestDTO(BaseModel):
+    connection_id: int = Field(..., description="ID of the Connection record to confirm")
+
+
+class ClientConnectionConfirmResponseDTO(BaseModel):
+    success: bool
+    connection_id: int
+    status: str
+    connected_at: Optional[str] = None
+    code: Optional[ValidationCode] = None
+    message: Optional[str] = None
+
 
 
 @dataclass

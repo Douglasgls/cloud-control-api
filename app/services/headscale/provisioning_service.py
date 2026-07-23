@@ -118,6 +118,28 @@ class HeadscaleProvisioningService:
         )
         return db_key
 
+    def create_preauth_key(
+        self,
+        *,
+        environment_id: str,
+        published_container_id: Optional[str] = None,
+        reusable: bool = False,
+        ephemeral: bool = False,
+        expiration: Optional[datetime] = None,
+    ) -> DbHeadscalePreAuthKey:
+        db_user = self.ensure_environment_user(environment_id, f"env_{environment_id}")
+        if expiration is None:
+            expiration = datetime.now(timezone.utc) + timedelta(hours=1)
+        return self.preauthkey_service.create(
+            headscale_user_db_id=db_user.id,
+            user_name=db_user.name,
+            published_container_id=published_container_id,
+            reusable=reusable,
+            ephemeral=ephemeral,
+            expiration=expiration,
+        )
+
+
     def sync_registered_node(
         self,
         *,
