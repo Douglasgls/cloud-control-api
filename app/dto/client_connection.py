@@ -35,6 +35,8 @@ class ConnectionInstructionsDTO(BaseModel):
     login_server: Optional[str] = None
     preauth_key: Optional[str] = None
     hostname: Optional[str] = None
+    tailscale_ip: Optional[str] = None
+    tailscale_ipv6: Optional[str] = None
     expires_at: Optional[str] = None
 
 

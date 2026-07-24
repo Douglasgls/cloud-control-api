@@ -99,7 +99,7 @@ def create_full_valid_setup(db) -> tuple[str, AccessToken, PublishedContainer, E
         version="1.50.0",
         machine_id="machine-123",
         node_key="node-key-456",
-        tailscale_ip="100.64.0.1",
+        tailscale_ip="100.64.0.1\nfd7a:115c:a1e0::2",
         online=True,
     )
     db.add(node)
@@ -329,7 +329,9 @@ def test_api_connect_success(client, db_session):
     assert data["connection"]["connection_id"] is not None
     assert data["connection"]["login_server"] is not None
     assert data["connection"]["preauth_key"] == "hs_pk_client_secret_999"
-    assert data["connection"]["hostname"] == "100.64.0.1"
+    assert data["connection"]["hostname"] == "my-container"
+    assert data["connection"]["tailscale_ip"] == "100.64.0.1"
+    assert data["connection"]["tailscale_ipv6"] == "fd7a:115c:a1e0::2"
     assert data["connection"]["expires_at"] is not None
 
     conn = db_session.query(Connection).filter(Connection.access_token_id == access_token.id).first()
@@ -463,5 +465,26 @@ def test_api_confirm_expired(client, db_session):
     # Verify status in DB was NOT mutated to EXPIRED by request validation
     db_session.refresh(conn)
     assert conn.status == ConnectionStatus.PENDING
+
+
+def test_parse_tailscale_ips():
+    from app.services.connection_response_builder import parse_tailscale_ips
+
+    v4, v6 = parse_tailscale_ips("100.64.0.2\nfd7a:115c:a1e0::2")
+    assert v4 == "100.64.0.2"
+    assert v6 == "fd7a:115c:a1e0::2"
+
+    v4, v6 = parse_tailscale_ips("100.64.0.5")
+    assert v4 == "100.64.0.5"
+    assert v6 is None
+
+    v4, v6 = parse_tailscale_ips("fd7a:115c:a1e0::9")
+    assert v4 is None
+    assert v6 == "fd7a:115c:a1e0::9"
+
+    v4, v6 = parse_tailscale_ips(None)
+    assert v4 is None
+    assert v6 is None
+
 
 
