@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, Any
 import urllib.parse
 import httpx
+import time
 
 from app.integrations.headscale.dto import (
     HeadscaleUserDTO,
@@ -85,6 +86,16 @@ class IHeadscaleClient(ABC):
         pass
 
 
+from app.utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
+
+_headscale_circuit_breaker = CircuitBreaker(
+    name="HeadscaleAPI",
+    failure_threshold=4,
+    recovery_timeout=20.0,
+    expected_exceptions=(HeadscaleConnectionError,),
+)
+
+
 class RestHeadscaleClient(IHeadscaleClient):
     def __init__(
         self,
@@ -92,6 +103,7 @@ class RestHeadscaleClient(IHeadscaleClient):
         api_key: str,
         timeout: float = 10.0,
         client: Optional[httpx.Client] = None,
+        max_retries: int = 3,
     ) -> None:
         base = (base_url or "").strip().rstrip("/")
         if base and not (base.startswith("http://") or base.startswith("https://")):
@@ -99,6 +111,7 @@ class RestHeadscaleClient(IHeadscaleClient):
         self.base_url = base
         self.api_key = api_key
         self.timeout = timeout
+        self.max_retries = max_retries
 
         if client is not None:
             self.client = client
@@ -109,6 +122,55 @@ class RestHeadscaleClient(IHeadscaleClient):
             }
             self.client = httpx.Client(headers=headers, timeout=self.timeout)
 
+    def _raw_request(
+        self,
+        method: str,
+        url: str,
+        json_data: Optional[Any],
+        params: Optional[dict[str, Any]],
+    ) -> httpx.Response:
+        last_exc: Optional[Exception] = None
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                response = self.client.request(method, url, json=json_data, params=params)
+
+                if response.status_code in (401, 403):
+                    raise HeadscaleAuthenticationError("Authentication with Headscale failed.")
+
+                if response.status_code == 404:
+                    raise HeadscaleNotFoundError(
+                        f"Resource not found at {url}",
+                        status_code=404,
+                        response_body=response.text,
+                    )
+
+                if response.status_code >= 500 and attempt < self.max_retries:
+                    time.sleep(0.2 * (2 ** (attempt - 1)))
+                    continue
+
+                if response.status_code >= 400:
+                    raise HeadscaleRequestError(
+                        f"Headscale request failed with status {response.status_code}",
+                        status_code=response.status_code,
+                        response_body=response.text,
+                    )
+
+                return response
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.WriteTimeout) as e:
+                last_exc = e
+                if attempt < self.max_retries:
+                    time.sleep(0.2 * (2 ** (attempt - 1)))
+                    continue
+                raise HeadscaleConnectionError(f"Failed to connect to Headscale: {str(e)}") from e
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise HeadscaleNotFoundError("Resource not found", status_code=404, response_body=e.response.text)
+                raise HeadscaleRequestError(str(e), status_code=e.response.status_code, response_body=e.response.text)
+
+        if last_exc:
+            raise HeadscaleConnectionError(f"Failed to connect to Headscale after retries: {str(last_exc)}")
+        raise HeadscaleError("Headscale request failed")
+
     def _request(
         self,
         method: str,
@@ -118,32 +180,13 @@ class RestHeadscaleClient(IHeadscaleClient):
     ) -> httpx.Response:
         url = f"{self.base_url}{path}"
         try:
-            response = self.client.request(method, url, json=json_data, params=params)
-
-            if response.status_code in (401, 403):
-                raise HeadscaleAuthenticationError("Authentication with Headscale failed.")
-
-            if response.status_code == 404:
-                raise HeadscaleNotFoundError(
-                    f"Resource not found at {path}",
-                    status_code=404,
-                    response_body=response.text,
-                )
-
-            if response.status_code >= 400:
-                raise HeadscaleRequestError(
-                    f"Headscale request failed with status {response.status_code}",
-                    status_code=response.status_code,
-                    response_body=response.text,
-                )
-
-            return response
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                raise HeadscaleNotFoundError("Resource not found", status_code=404, response_body=e.response.text)
-            raise HeadscaleRequestError(str(e), status_code=e.response.status_code, response_body=e.response.text)
-        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.WriteTimeout) as e:
-            raise HeadscaleConnectionError(f"Failed to connect to Headscale: {str(e)}")
+            return _headscale_circuit_breaker.execute(
+                self._raw_request, method, url, json_data, params
+            )
+        except CircuitBreakerOpenError as e:
+            raise HeadscaleConnectionError(
+                "Headscale service is temporarily unavailable (Circuit Breaker OPEN)."
+            ) from e
         except HeadscaleError:
             raise
         except Exception as e:

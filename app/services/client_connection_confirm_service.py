@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.dto.client_connection import (
+from app.dtos.client_connection import (
     ClientConnectionConfirmRequestDTO,
     ClientConnectionConfirmResponseDTO,
     ValidationCode,

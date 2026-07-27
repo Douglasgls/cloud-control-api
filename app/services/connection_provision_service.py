@@ -3,12 +3,14 @@ from typing import Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from app.dto.client_connection import AuthorizedConnectionContext
+from app.dtos.client_connection import AuthorizedConnectionContext
 from app.models.connection import Connection
 from app.models.connection_status import ConnectionStatus
 from app.models.headscale_preauth_key import HeadscalePreAuthKey
 from app.repositories.connection_repository import ConnectionRepository
 from app.services.headscale.provisioning_service import HeadscaleProvisioningService
+
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,12 @@ class ConnectionProvisionService:
             f"in environment '{context.environment.id}'..."
         )
 
+        # Expire any previous PENDING connections for this access token
+        previous_connections = self.connection_repo.list_by_access_token(context.access_token.id)
+        for prev in previous_connections:
+            if prev.status == ConnectionStatus.PENDING:
+                prev.status = ConnectionStatus.EXPIRED
+
         # 1 & 2: Guarantee Headscale user & request brand new PreAuthKey
         preauth_key = self.provisioning_service.create_preauth_key(
             environment_id=context.environment.id,
@@ -49,13 +57,19 @@ class ConnectionProvisionService:
             ephemeral=False,
         )
 
+        # Set connection expiration (5 minutes default TTL for handshake completion)
+        now_naive = datetime.now(timezone.utc).replace(tzinfo=None)
+        ttl_expires_at = now_naive + timedelta(minutes=5)
+        if preauth_key.expiration and preauth_key.expiration < ttl_expires_at:
+            ttl_expires_at = preauth_key.expiration
+
         # 3 & 4: Create Connection record in DB (status=PENDING)
         connection = self.connection_repo.create(
             published_container_id=context.published_container.id,
             access_token_id=context.access_token.id,
             headscale_preauth_key_id=preauth_key.id,
             status=ConnectionStatus.PENDING,
-            expires_at=preauth_key.expiration,
+            expires_at=ttl_expires_at,
         )
 
         self.db.commit()

@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db.database import get_db
-from app.dto.client_connection import (
+from app.dtos.client_connection import (
     AuthorizedConnectionContext,
     ClientConnectionRequestDTO,
     ValidationCode,

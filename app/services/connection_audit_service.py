@@ -3,7 +3,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.dto.client_connection import ValidationResult
+from app.dtos.client_connection import ValidationResult
 
 logger = logging.getLogger(__name__)
 

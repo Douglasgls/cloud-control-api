@@ -2,7 +2,7 @@ import ipaddress
 from typing import Optional
 
 from app.core.config import get_settings
-from app.dto.client_connection import (
+from app.dtos.client_connection import (
     AuthorizedConnectionContext,
     ClientConnectionResponseDTO,
     ConnectionInstructionsDTO,

@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.dto.client_connection import (
+from app.dtos.client_connection import (
     ClientConnectionConfirmRequestDTO,
     ClientConnectionConfirmResponseDTO,
     ClientConnectionRequestDTO,

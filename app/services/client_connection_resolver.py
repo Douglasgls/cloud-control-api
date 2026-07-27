@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.dto.client_connection import AuthorizedConnectionContext
+from app.dtos.client_connection import AuthorizedConnectionContext
 from app.repositories.environment_repository import EnvironmentRepository
 from app.repositories.published_container_repository import PublishedContainerRepository
 from app.repositories.published_node_repository import PublishedNodeRepository
