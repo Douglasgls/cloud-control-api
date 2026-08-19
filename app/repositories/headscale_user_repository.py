@@ -15,6 +15,10 @@ class HeadscaleUserRepository:
             select(HeadscaleUser).where(HeadscaleUser.name == name)
         )
 
+    def list_all(self) -> list[HeadscaleUser]:
+        return list(self.db.scalars(select(HeadscaleUser)).all())
+
+
     def get_by_environment(self, environment_id: str) -> HeadscaleUser | None:
         return self.db.scalar(
             select(HeadscaleUser).where(HeadscaleUser.environment_id == environment_id)

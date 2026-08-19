@@ -32,6 +32,28 @@ class HeadscaleNodeRepository:
             ).all()
         )
 
+    def get_by_machine_key(self, machine_key: str) -> HeadscaleNode | None:
+        return self.db.scalar(
+            select(HeadscaleNode).where(HeadscaleNode.machine_key == machine_key)
+        )
+
+    def get_by_node_key(self, node_key: str) -> HeadscaleNode | None:
+        return self.db.scalar(
+            select(HeadscaleNode).where(HeadscaleNode.node_key == node_key)
+        )
+
+    def bulk_get_all_mapped(self) -> dict[str, HeadscaleNode]:
+        nodes = list(self.db.scalars(select(HeadscaleNode)).all())
+        mapped = {}
+        for n in nodes:
+            if n.headscale_node_id:
+                mapped[str(n.headscale_node_id)] = n
+            if n.machine_key:
+                mapped[n.machine_key] = n
+            if n.node_key:
+                mapped[n.node_key] = n
+        return mapped
+
     def create(
         self,
         *,
@@ -42,6 +64,8 @@ class HeadscaleNodeRepository:
         node_key: Optional[str] = None,
         hostname: str,
         given_name: Optional[str] = None,
+        tailscale_ip: Optional[str] = None,
+        online: bool = False,
         last_seen: Optional[datetime] = None,
         expiry: Optional[datetime] = None,
         registered: bool = False
@@ -54,6 +78,8 @@ class HeadscaleNodeRepository:
             node_key=node_key,
             hostname=hostname,
             given_name=given_name,
+            tailscale_ip=tailscale_ip,
+            online=online,
             last_seen=last_seen,
             expiry=expiry,
             registered=registered
@@ -70,6 +96,8 @@ class HeadscaleNodeRepository:
         node_key: Optional[str] = None,
         hostname: str,
         given_name: Optional[str] = None,
+        tailscale_ip: Optional[str] = None,
+        online: bool = False,
         last_seen: Optional[datetime] = None,
         expiry: Optional[datetime] = None,
         registered: bool
@@ -78,11 +106,14 @@ class HeadscaleNodeRepository:
         node.node_key = node_key
         node.hostname = hostname
         node.given_name = given_name
+        node.tailscale_ip = tailscale_ip
+        node.online = online
         node.last_seen = last_seen
         node.expiry = expiry
         node.registered = registered
         self.db.flush()
         return node
+
 
     def delete(self, node: HeadscaleNode) -> None:
         self.db.delete(node)

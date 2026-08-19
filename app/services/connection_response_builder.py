@@ -61,7 +61,8 @@ class ConnectionResponseBuilder:
             )
             expires_at_str = exp_time.isoformat() if exp_time else None
 
-            conn_id = connection.id if connection else None
+            conn_id = connection.public_id if connection else None
+
             instructions = ConnectionInstructionsDTO(
                 connection_id=conn_id,
                 login_server=settings.headscale_url,

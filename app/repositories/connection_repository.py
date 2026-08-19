@@ -16,8 +16,26 @@ class ConnectionRepository:
     def get_by_id(self, connection_id: int) -> Optional[Connection]:
         return self.db.get(Connection, connection_id)
 
+    def get_by_public_id(self, public_id: str) -> Optional[Connection]:
+        stmt = select(Connection).where(Connection.public_id == public_id)
+        return self.db.scalars(stmt).first()
+
+    def get_by_headscale_node_id(self, headscale_node_id: str) -> list[Connection]:
+        stmt = select(Connection).where(Connection.headscale_node_id == headscale_node_id)
+        return list(self.db.scalars(stmt).all())
+
     def list_by_access_token(self, access_token_id: int) -> list[Connection]:
         stmt = select(Connection).where(Connection.access_token_id == access_token_id)
+        return list(self.db.scalars(stmt).all())
+
+    def list_active_by_environment(self, environment_id: str) -> list[Connection]:
+        from app.models.published_container import PublishedContainer
+        stmt = (
+            select(Connection)
+            .join(PublishedContainer, Connection.published_container_id == PublishedContainer.id)
+            .where(PublishedContainer.environment_id == environment_id)
+            .where(Connection.status.in_([ConnectionStatus.PENDING, ConnectionStatus.CONNECTED]))
+        )
         return list(self.db.scalars(stmt).all())
 
     def create(
@@ -49,4 +67,5 @@ class ConnectionRepository:
         connection.connected_at = connected_at
         self.db.flush()
         return connection
+
 
