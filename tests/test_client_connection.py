@@ -338,7 +338,8 @@ def test_api_connect_success(client, db_session):
     assert conn is not None
     assert conn.status == "PENDING"
     assert conn.headscale_preauth_key_id == mock_key.id
-    assert data["connection"]["connection_id"] == conn.id
+    assert data["connection"]["connection_id"] == conn.public_id
+
 
 
 def test_api_connect_token_not_found(client, db_session):
@@ -402,7 +403,7 @@ def test_api_confirm_success(client, db_session):
     assert confirm_data["status"] == "CONNECTED"
     assert confirm_data["connected_at"] is not None
 
-    conn = db_session.get(Connection, conn_id)
+    conn = db_session.query(Connection).filter(Connection.public_id == conn_id).first()
     assert conn.status == "CONNECTED"
     assert conn.connected_at is not None
 
@@ -414,7 +415,7 @@ def test_api_confirm_success(client, db_session):
 
 
 def test_api_confirm_not_found(client, db_session):
-    res = client.post("/client/confirm", json={"connection_id": 99999})
+    res = client.post("/client/confirm", json={"connection_id": "00000000-0000-0000-0000-000000000000"})
     assert res.status_code == 404
     data = res.json()
     assert data["success"] is False
@@ -456,7 +457,8 @@ def test_api_confirm_expired(client, db_session):
     db_session.add(conn)
     db_session.commit()
 
-    res = client.post("/client/confirm", json={"connection_id": conn.id})
+    res = client.post("/client/confirm", json={"connection_id": conn.public_id})
+
     assert res.status_code == 400
     data = res.json()
     assert data["success"] is False

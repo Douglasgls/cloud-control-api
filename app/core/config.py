@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     headscale_url: str = ""
     headscale_api_key: str = ""
     headscale_timeout: int = 10
+    headscale_sync_interval: int = 30
+
 
     @field_validator("headscale_url", mode="before")
     @classmethod

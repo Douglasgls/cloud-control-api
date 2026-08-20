@@ -6,7 +6,9 @@ class WebSocketMessage(BaseModel):
     request_id: str | None = None
     origin: str
     type: str
+    version: int = 1
     payload: dict[str, Any] = Field(default_factory=dict)
+
 
 
 class WebSocketResponse(BaseModel):

@@ -29,11 +29,11 @@ class ClientConnectionConfirmService:
     def confirm(
         self, request: ClientConnectionConfirmRequestDTO
     ) -> ClientConnectionConfirmResponseDTO:
-        logger.info(f"Processing client connection confirmation handshake for Connection ID: {request.connection_id}")
+        logger.info(f"Processing client connection confirmation handshake for Public Connection ID: {request.connection_id}")
 
-        connection = self.connection_repo.get_by_id(request.connection_id)
+        connection = self.connection_repo.get_by_public_id(request.connection_id)
         if not connection:
-            logger.warning(f"Connection confirmation failed: Connection ID {request.connection_id} not found.")
+            logger.warning(f"Connection confirmation failed: Connection public_id '{request.connection_id}' not found.")
             return ClientConnectionConfirmResponseDTO(
                 success=False,
                 connection_id=request.connection_id,
@@ -44,14 +44,24 @@ class ClientConnectionConfirmService:
 
         # Idempotency check: if already CONNECTED, return success without altering DB
         if connection.status == ConnectionStatus.CONNECTED:
-            logger.info(f"Connection ID {connection.id} is already in CONNECTED status (idempotent request).")
+            logger.info(f"Connection public_id {connection.public_id} is already in CONNECTED status (idempotent request).")
             connected_at_str = connection.connected_at.isoformat() if connection.connected_at else None
             return ClientConnectionConfirmResponseDTO(
                 success=True,
-                connection_id=connection.id,
+                connection_id=connection.public_id,
                 status=connection.status,
                 connected_at=connected_at_str,
                 message="Connection already confirmed.",
+            )
+
+        if connection.status in (ConnectionStatus.REVOKED, ConnectionStatus.EXPIRED):
+            logger.warning(f"Connection confirmation failed: Connection public_id {connection.public_id} status is {connection.status}.")
+            return ClientConnectionConfirmResponseDTO(
+                success=False,
+                connection_id=connection.public_id,
+                status=connection.status,
+                code=ValidationCode.CONNECTION_EXPIRED,
+                message=f"Connection authorization is {connection.status.lower()}.",
             )
 
         # Expiration check: validate expires_at without altering DB status
@@ -59,10 +69,10 @@ class ClientConnectionConfirmService:
             exp = connection.expires_at if connection.expires_at.tzinfo is not None else connection.expires_at.replace(tzinfo=timezone.utc)
             now = datetime.now(timezone.utc)
             if exp <= now:
-                logger.warning(f"Connection confirmation failed: Connection ID {connection.id} has expired.")
+                logger.warning(f"Connection confirmation failed: Connection public_id {connection.public_id} has expired.")
                 return ClientConnectionConfirmResponseDTO(
                     success=False,
-                    connection_id=connection.id,
+                    connection_id=connection.public_id,
                     status=connection.status,
                     code=ValidationCode.CONNECTION_EXPIRED,
                     message="Connection authorization has expired.",
@@ -74,7 +84,7 @@ class ClientConnectionConfirmService:
 
         # Domain event publication / log
         logger.info(
-            f"[Domain Event] ClientConnectionConfirmed - Connection ID: {connection.id} | "
+            f"[Domain Event] ClientConnectionConfirmed - Connection Public ID: {connection.public_id} | "
             f"Container ID: {connection.published_container_id} | "
             f"Token ID: {connection.access_token_id} | "
             f"Connected At: {now.isoformat()}"
@@ -82,7 +92,8 @@ class ClientConnectionConfirmService:
 
         return ClientConnectionConfirmResponseDTO(
             success=True,
-            connection_id=connection.id,
+            connection_id=connection.public_id,
             status=ConnectionStatus.CONNECTED,
             connected_at=now.isoformat(),
         )
+

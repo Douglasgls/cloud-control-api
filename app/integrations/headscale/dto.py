@@ -36,15 +36,19 @@ class HeadscaleNodeUserDTO(BaseModel):
 class HeadscaleNodeDTO(BaseModel):
     id: str
     name: str
-    givenName: str
+    givenName: Optional[str] = None
     user: HeadscaleNodeUserDTO
+    machineKey: Optional[str] = None
+    nodeKey: Optional[str] = None
     ipAddresses: list[str] = Field(default_factory=list)
-    online: bool
+    online: bool = False
+    invalid: bool = False
     validTags: list[str] = Field(default_factory=list)
     forcedTags: list[str] = Field(default_factory=list)
-    createdAt: str
+    createdAt: Optional[str] = None
     lastSeen: Optional[str] = None
     expiry: Optional[str] = None
+
 
 
 class HeadscaleNodeListDTO(BaseModel):

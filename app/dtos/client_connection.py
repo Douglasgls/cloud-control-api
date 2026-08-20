@@ -31,7 +31,7 @@ class ClientConnectionRequestDTO(BaseModel):
 
 
 class ConnectionInstructionsDTO(BaseModel):
-    connection_id: Optional[int] = None
+    connection_id: Optional[str] = None
     login_server: Optional[str] = None
     preauth_key: Optional[str] = None
     hostname: Optional[str] = None
@@ -48,16 +48,17 @@ class ClientConnectionResponseDTO(BaseModel):
 
 
 class ClientConnectionConfirmRequestDTO(BaseModel):
-    connection_id: int = Field(..., description="ID of the Connection record to confirm")
+    connection_id: str = Field(..., description="UUID (public_id) of the Connection record to confirm")
 
 
 class ClientConnectionConfirmResponseDTO(BaseModel):
     success: bool
-    connection_id: int
+    connection_id: str
     status: str
     connected_at: Optional[str] = None
     code: Optional[ValidationCode] = None
     message: Optional[str] = None
+
 
 
 @dataclass
