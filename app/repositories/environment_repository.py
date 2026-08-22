@@ -36,6 +36,14 @@ class EnvironmentRepository:
             select(Environment).where(Environment.environment_token_hash == token_hash)
         )
 
+    def get_by_user_id(self, user_id: int) -> list[Environment]:
+        return list(
+            self.db.scalars(
+                select(Environment).where(Environment.user_id == user_id).order_by(Environment.created_at.desc())
+            ).all()
+        )
+
+
     def update_status(self, environment_id: str, status_online: bool, last_ping: datetime | None = None) -> Environment | None:
         environment = self.get_by_id(environment_id)
         if environment:

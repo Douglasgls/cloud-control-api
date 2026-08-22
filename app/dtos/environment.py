@@ -27,3 +27,16 @@ class EnvironmentResponseDTO(BaseModel):
     status_online: bool
     last_ping: datetime | None
     environment_token: str
+
+
+class EnvironmentSummaryDTO(BaseModel):
+    """Resumo do ambiente sem expor o token."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    environment_id: str
+    name: str
+    description: str | None
+    status_online: bool
+    last_ping: datetime | None
+

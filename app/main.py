@@ -74,19 +74,31 @@ async def lifespan(_: FastAPI):
 
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Cloud Control API",
     version="0.1.0",
     description="API central de controle de ambientes Cloud Control.",
     lifespan=lifespan,
 )
-app.include_router(auth_router)
-app.include_router(agent_router)
-app.include_router(environments_router)
-app.include_router(realtime_router)
-app.include_router(client_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router, prefix="/api")
+app.include_router(agent_router, prefix="/api")
+app.include_router(environments_router, prefix="/api")
+app.include_router(realtime_router, prefix="/api")
+app.include_router(client_router, prefix="/api")
 
 
 @app.get("/health", tags=["Health"])
+@app.get("/api/health", tags=["Health"])
 def health() -> dict[str, str]:
     return {"status": "ok"}
