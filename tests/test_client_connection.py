@@ -320,7 +320,7 @@ def test_api_connect_success(client, db_session):
         "app.services.connection_provision_service.HeadscaleProvisioningService.create_preauth_key",
         return_value=mock_key,
     ):
-        res = client.post("/client/connect", json={"access_token": raw_token})
+        res = client.post("/api/client/connect", json={"access_token": raw_token})
 
     assert res.status_code == 200
     data = res.json()
@@ -343,7 +343,7 @@ def test_api_connect_success(client, db_session):
 
 
 def test_api_connect_token_not_found(client, db_session):
-    res = client.post("/client/connect", json={"access_token": "invalid_token_999"})
+    res = client.post("/api/client/connect", json={"access_token": "invalid_token_999"})
     assert res.status_code == 401
     data = res.json()
     assert data["authorized"] is False
@@ -355,7 +355,7 @@ def test_api_connect_container_offline(client, db_session):
     container.status = "stopped"
     db_session.commit()
 
-    res = client.post("/client/connect", json={"access_token": raw_token})
+    res = client.post("/api/client/connect", json={"access_token": raw_token})
     assert res.status_code == 403
     data = res.json()
     assert data["authorized"] is False
@@ -391,11 +391,11 @@ def test_api_confirm_success(client, db_session):
         "app.services.connection_provision_service.HeadscaleProvisioningService.create_preauth_key",
         return_value=mock_key,
     ):
-        res_connect = client.post("/client/connect", json={"access_token": raw_token})
+        res_connect = client.post("/api/client/connect", json={"access_token": raw_token})
     
     conn_id = res_connect.json()["connection"]["connection_id"]
 
-    res_confirm = client.post("/client/confirm", json={"connection_id": conn_id})
+    res_confirm = client.post("/api/client/confirm", json={"connection_id": conn_id})
     assert res_confirm.status_code == 200
     confirm_data = res_confirm.json()
     assert confirm_data["success"] is True
@@ -408,14 +408,14 @@ def test_api_confirm_success(client, db_session):
     assert conn.connected_at is not None
 
     # Test idempotency: second confirm returns 200 OK without error
-    res_confirm_2 = client.post("/client/confirm", json={"connection_id": conn_id})
+    res_confirm_2 = client.post("/api/client/confirm", json={"connection_id": conn_id})
     assert res_confirm_2.status_code == 200
     assert res_confirm_2.json()["success"] is True
     assert res_confirm_2.json()["status"] == "CONNECTED"
 
 
 def test_api_confirm_not_found(client, db_session):
-    res = client.post("/client/confirm", json={"connection_id": "00000000-0000-0000-0000-000000000000"})
+    res = client.post("/api/client/confirm", json={"connection_id": "00000000-0000-0000-0000-000000000000"})
     assert res.status_code == 404
     data = res.json()
     assert data["success"] is False
@@ -457,7 +457,7 @@ def test_api_confirm_expired(client, db_session):
     db_session.add(conn)
     db_session.commit()
 
-    res = client.post("/client/confirm", json={"connection_id": conn.public_id})
+    res = client.post("/api/client/confirm", json={"connection_id": conn.public_id})
 
     assert res.status_code == 400
     data = res.json()

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.dtos.environment import CreateEnvironmentDTO, EnvironmentResponseDTO
+from app.dtos.environment import CreateEnvironmentDTO, EnvironmentResponseDTO, EnvironmentSummaryDTO
 from app.models.user import User
 from app.repositories.environment_repository import EnvironmentRepository
 
@@ -34,6 +34,20 @@ class EnvironmentService:
             last_ping=environment.last_ping,
             environment_token=environment_token,
         )
+
+    def list_by_owner(self, owner: User) -> list[EnvironmentSummaryDTO]:
+        envs = self.environments.get_by_user_id(owner.id)
+        return [
+            EnvironmentSummaryDTO(
+                environment_id=env.id,
+                name=env.name,
+                description=env.description,
+                status_online=env.status_online,
+                last_ping=env.last_ping,
+            )
+            for env in envs
+        ]
+
 
     def update_status(self, environment_id: str, status_online: bool, last_ping: datetime | None = None) -> None:
         self.environments.update_status(environment_id, status_online, last_ping)
