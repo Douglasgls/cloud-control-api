@@ -101,4 +101,4 @@ app.include_router(client_router, prefix="/api")
 @app.get("/health", tags=["Health"])
 @app.get("/api/health", tags=["Health"])
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "message": "Deploy automático testado com sucesso!"}
