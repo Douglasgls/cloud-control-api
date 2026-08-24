@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.models.access_token import AccessToken
     from app.models.connection import Connection
     from app.models.environment import Environment
+    from app.models.network_endpoint import NetworkEndpoint
     from app.models.published_node import PublishedNode
 
 
@@ -45,6 +46,12 @@ class PublishedContainer(TimestampMixin, Base):
     environment: Mapped[Environment] = relationship(back_populates="published_containers")
 
     published_node: Mapped[PublishedNode | None] = relationship(
+        back_populates="published_container",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
+    network_endpoint: Mapped[NetworkEndpoint | None] = relationship(
         back_populates="published_container",
         cascade="all, delete-orphan",
         uselist=False,

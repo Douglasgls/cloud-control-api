@@ -6,6 +6,7 @@ from app.models.published_container import PublishedContainer
 from app.repositories.published_container_repository import PublishedContainerRepository
 from app.services.published_node_sync_service import PublishedNodeSyncService
 from app.services.access_token_sync_service import AccessTokenSyncService
+from app.services.network_endpoint_sync_service import NetworkEndpointSyncService
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class PublishedContainerSyncService:
         self.repository = PublishedContainerRepository(db)
         self.node_sync_service = PublishedNodeSyncService(db)
         self.token_sync_service = AccessTokenSyncService(db)
+        self.endpoint_sync_service = NetworkEndpointSyncService(db)
 
     def sync_containers(self, environment_id: str, containers_dto: list[PublishedContainerSnapshotDTO]) -> list[PublishedContainer]:
         synced_containers = []
@@ -62,6 +64,9 @@ class PublishedContainerSyncService:
 
             # Sync Node associated with this Container
             self.node_sync_service.sync_node(container.id, container_dto.tailscale)
+
+            # Sync NetworkEndpoint associated with this Container
+            self.endpoint_sync_service.sync_container_endpoint(container.id, container_dto)
 
             # Sync Access Tokens associated with this Container
             self.token_sync_service.sync_tokens(container.id, container_dto.access_tokens)

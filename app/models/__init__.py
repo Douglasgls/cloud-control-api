@@ -11,6 +11,8 @@ from app.models.user import User
 from app.models.headscale_user import HeadscaleUser
 from app.models.headscale_preauth_key import HeadscalePreAuthKey
 from app.models.headscale_node import HeadscaleNode
+from app.models.network_endpoint import NetworkEndpoint
+from app.models.network_endpoint_port import NetworkEndpointPort
 from app.models.provisioning_status import ProvisioningStatus
 from app.models.connection_status import ConnectionStatus
 
@@ -26,6 +28,8 @@ __all__ = [
     "HeadscaleUser",
     "HeadscalePreAuthKey",
     "HeadscaleNode",
+    "NetworkEndpoint",
+    "NetworkEndpointPort",
     "ProvisioningStatus",
     "ConnectionStatus",
 ]

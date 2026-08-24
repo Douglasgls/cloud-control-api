@@ -3,6 +3,13 @@ from typing import Any, Optional
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
+class NetworkEndpointPortSnapshotDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    port: int
+    protocol: str = "tcp"
+
+
 class PublishedTailscaleNodeSnapshotDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -14,6 +21,9 @@ class PublishedTailscaleNodeSnapshotDTO(BaseModel):
     tailscale_ip: Optional[str] = None
     online: bool = False
     last_sync: Optional[datetime | str] = None
+    hostname: Optional[str] = None
+    dns_name: Optional[str] = None
+    ports: list[NetworkEndpointPortSnapshotDTO] = Field(default_factory=list)
 
 
 class PublishedAccessTokenSnapshotDTO(BaseModel):
@@ -39,6 +49,9 @@ class PublishedContainerSnapshotDTO(BaseModel):
     )
     name: str
     status: str = "unknown"
+    hostname: Optional[str] = None
+    dns_name: Optional[str] = None
+    ports: list[NetworkEndpointPortSnapshotDTO] = Field(default_factory=list)
     tailscale: Optional[PublishedTailscaleNodeSnapshotDTO] = None
     access_tokens: list[PublishedAccessTokenSnapshotDTO] = Field(default_factory=list)
 
