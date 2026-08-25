@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -37,6 +37,25 @@ def get_current_user(
     if user is None:
         raise unauthorized
     return user
+
+
+optional_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def get_current_user_optional(
+    db: Annotated[Session, Depends(get_db)],
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(optional_bearer_scheme)] = None,
+) -> Optional[User]:
+    if not credentials:
+        return None
+    try:
+        payload = TokenPayload.model_validate(decode_access_token(credentials.credentials))
+        if payload.type != "user":
+            return None
+        user_id = int(payload.sub)
+        return UserRepository(db).get_by_id(user_id)
+    except Exception:
+        return None
 
 
 def get_current_agent(
