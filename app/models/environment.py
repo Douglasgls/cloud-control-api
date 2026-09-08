@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uuid import uuid4
@@ -46,3 +46,8 @@ class Environment(TimestampMixin, Base):
         cascade="all, delete-orphan",
         uselist=False,
     )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_environments_user_id_name"),
+    )
+
