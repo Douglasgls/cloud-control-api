@@ -40,3 +40,16 @@ def create_environment(
 ) -> EnvironmentResponseDTO:
     return EnvironmentService(db).create(owner=current_user, data=data)
 
+
+@router.delete(
+    "/{environment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Excluir ambiente",
+    description="Remove um ambiente pertencente ao usuário autenticado e limpa os recursos associados.",
+)
+def delete_environment(
+    environment_id: str, db: DBSession, current_user: CurrentUser
+) -> None:
+    EnvironmentService(db).delete(owner=current_user, environment_id=environment_id)
+
+

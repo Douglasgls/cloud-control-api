@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models.environment import Environment
 
@@ -43,6 +43,14 @@ class EnvironmentRepository:
             ).all()
         )
 
+    def get_by_user_id_and_name(self, user_id: int, name: str) -> Environment | None:
+        return self.db.scalar(
+            select(Environment).where(
+                Environment.user_id == user_id,
+                func.lower(Environment.name) == name.strip().lower(),
+            )
+        )
+
 
     def update_status(self, environment_id: str, status_online: bool, last_ping: datetime | None = None) -> Environment | None:
         environment = self.get_by_id(environment_id)
@@ -53,3 +61,7 @@ class EnvironmentRepository:
             self.db.commit()
             self.db.refresh(environment)
         return environment
+
+    def delete(self, environment: Environment) -> None:
+        self.db.delete(environment)
+        self.db.commit()
