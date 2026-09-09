@@ -21,8 +21,15 @@ class NodeSyncHandler:
         try:
             with SessionLocal() as db:
                 node_service = HeadscaleNodeService(db)
+                
+                # Retrieve the actual Headscale username for this environment
+                from app.repositories.headscale_user_repository import HeadscaleUserRepository
+                user_repo = HeadscaleUserRepository(db)
+                db_user = user_repo.get_by_environment(connection.environment_id)
+                headscale_username = db_user.name if db_user else f"env_{connection.environment_id}"
+                
                 # 1. Fetch from Headscale API directly for the environment user
-                api_nodes = node_service.list(user=connection.environment_id)
+                api_nodes = node_service.list(user=headscale_username)
                 
                 payload_nodes = []
                 for node in api_nodes:
