@@ -27,5 +27,6 @@ class WebSocketErrorDetail(BaseModel):
 class WebSocketError(BaseModel):
     request_id: str
     origin: str
+    type: str = "error"
     success: bool = False
     error: WebSocketErrorDetail

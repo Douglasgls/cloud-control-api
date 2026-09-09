@@ -32,8 +32,11 @@ class HeadscaleNodeService:
 
     def list(self, user: Optional[str] = None) -> list[IntegrationNode]:
         logger.info(f"Listing nodes from Headscale API (user filter: {user})")
-        dto_list = self.client.list_nodes(user)
+        # Fetch ALL nodes to avoid Headscale 500 error when filtering by user query param
+        dto_list = self.client.list_nodes()
         nodes = [HeadscaleMapper.to_node(n) for n in dto_list.nodes]
+        if user:
+            nodes = [n for n in nodes if n.user.name == user]
         logger.info(f"Retrieved {len(nodes)} nodes from Headscale API")
         return nodes
 
