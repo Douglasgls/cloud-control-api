@@ -28,6 +28,10 @@ class ConnectionRepository:
         stmt = select(Connection).where(Connection.access_token_id == access_token_id)
         return list(self.db.scalars(stmt).all())
 
+    def list_by_container(self, published_container_id: str) -> list[Connection]:
+        stmt = select(Connection).where(Connection.published_container_id == published_container_id)
+        return list(self.db.scalars(stmt).all())
+
     def list_active_by_environment(self, environment_id: str) -> list[Connection]:
         from app.models.published_container import PublishedContainer
         stmt = (

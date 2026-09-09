@@ -133,18 +133,23 @@ class HeadscaleStateSyncService:
                 offline_count += 1
 
             if db_node:
+                # Normaliza last_seen para comparação (DB pode estar naive)
+                db_last_seen = db_node.last_seen.replace(tzinfo=timezone.utc) if db_node.last_seen and db_node.last_seen.tzinfo is None else db_node.last_seen
+                
                 # Check if any attributes changed
                 changed = (
                     db_node.online != is_online
                     or db_node.tailscale_ip != tailscale_ip
                     or db_node.hostname != given_name
                     or db_node.registered != is_registered
+                    or db_last_seen != last_seen_dt
                 )
                 if changed:
                     only_online_changed = (
                         db_node.online != is_online
                         and db_node.tailscale_ip == tailscale_ip
                         and db_node.hostname == given_name
+                        and db_node.registered == is_registered
                     )
                     action = "NODE_STATUS_CHANGED" if only_online_changed else "NODE_UPDATED"
 
