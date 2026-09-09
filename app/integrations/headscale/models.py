@@ -25,6 +25,8 @@ class HeadscaleNode(BaseModel):
     name: str
     given_name: str
     user: HeadscaleUser
+    machine_key: Optional[str] = None
+    node_key: Optional[str] = None
     ip_addresses: list[str] = Field(default_factory=list)
     online: bool
     valid_tags: list[str] = Field(default_factory=list)
