@@ -78,7 +78,11 @@ class NodeSyncHandler:
                 )
                 
                 await connection.websocket.send_text(response.model_dump_json())
-                logger.info(f"Sent node.sync.response with {len(payload_nodes)} nodes for environment {connection.environment_id}")
+                
+                if not payload_nodes:
+                    logger.info(f"Sent node.sync.response with EMPTY snapshot (0 nodes found in Headscale for user {headscale_username}) - Environment {connection.environment_id}")
+                else:
+                    logger.info(f"Sent node.sync.response with {len(payload_nodes)} nodes for environment {connection.environment_id}")
 
         except Exception as e:
             logger.error(f"Failed to process node.sync.request: {e}", exc_info=True)
