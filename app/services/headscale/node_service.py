@@ -55,7 +55,7 @@ class HeadscaleNodeService:
         db_node = self.repository.get_by_headscale_id(node_id)
         if db_node:
             self.repository.delete(db_node)
-            self.db.commit()
+            self.db.flush()
             logger.info(f"Node '{node_id}' deleted successfully from database")
         else:
             logger.warning(f"Node '{node_id}' not found in database for deletion")
@@ -78,7 +78,7 @@ class HeadscaleNodeService:
                 expiry=db_node.expiry,
                 registered=db_node.registered
             )
-            self.db.commit()
+            self.db.flush()
             logger.info("Node hostname updated successfully in database")
             
         return node
