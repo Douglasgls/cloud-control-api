@@ -11,6 +11,7 @@ from app.realtime.manager import RealtimeManager
 from app.realtime.handlers.heartbeat import HeartbeatHandler
 from app.realtime.handlers.system import SystemHandler
 from app.realtime.handlers.event_handler import EventHandler
+from app.realtime.handlers.node_sync import NodeSyncHandler
 
 router = APIRouter(prefix="/ws", tags=["Realtime"])
 
@@ -29,6 +30,7 @@ realtime_manager = RealtimeManager(connection_manager, dispatcher)
 event_handler = EventHandler(realtime_manager)
 dispatcher.register("event.publish", event_handler.handle)
 dispatcher.register("environment.changed", event_handler.handle)
+dispatcher.register("node.sync.request", NodeSyncHandler.handle)
 
 
 async def get_token(

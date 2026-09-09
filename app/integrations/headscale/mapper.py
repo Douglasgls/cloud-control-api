@@ -62,6 +62,8 @@ class HeadscaleMapper:
                 name=dto.user.name,
                 created_at=user_dt if user_dt is not None else datetime.now(timezone.utc),
             ),
+            machine_key=dto.machineKey,
+            node_key=dto.nodeKey,
             ip_addresses=dto.ipAddresses,
             online=dto.online,
             valid_tags=dto.validTags,
