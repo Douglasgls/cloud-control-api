@@ -57,10 +57,6 @@ class HeadscaleStateSyncService:
             pc = self.db.get(PublishedContainer, node.published_container_id)
             if pc and pc.container_number:
                 return pc.container_number
-        conns = self.connection_repo.get_by_headscale_node_id(node.id)
-        for conn in conns:
-            if conn.published_container and conn.published_container.container_number:
-                return conn.published_container.container_number
         return None
 
     async def sync(self) -> dict[str, Any]:
