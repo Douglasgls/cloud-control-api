@@ -5,6 +5,7 @@ from app.repositories.published_container_repository import PublishedContainerRe
 from app.repositories.connection_repository import ConnectionRepository
 from app.repositories.headscale_node_repository import HeadscaleNodeRepository
 from app.services.headscale.node_service import HeadscaleNodeService
+from app.integrations.headscale.exceptions import HeadscaleNotFoundError, HeadscaleRequestError
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +65,13 @@ class ContainerCleanupService:
             logger.info(f"[CLEANUP] Deleting Headscale node {node_id}")
             try:
                 self.headscale_node_service.delete(node_id)
-            except Exception as e:
-                # If it's a 404 (Not Found), it means it's already deleted in Headscale.
-                # However, HeadscaleNodeService handles exceptions internally or propagates them.
-                # Re-raise to ensure we don't leave zombie Headscale nodes if it was a 500 error
-                raise
+            except HeadscaleNotFoundError:
+                logger.info(f"[CLEANUP] Headscale node {node_id} already removed (404). Continuing cleanup.")
+            except HeadscaleRequestError as e:
+                if e.status_code == 400:
+                    logger.info(f"[CLEANUP] Headscale node {node_id} returned 400 (invalid/already removed). Continuing cleanup.")
+                else:
+                    raise
 
         # 3. Delete the container from the database (Cascades will delete tokens, endpoints, and connections)
         self.container_repo.delete(container)
