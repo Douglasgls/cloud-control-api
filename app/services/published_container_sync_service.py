@@ -21,6 +21,19 @@ class PublishedContainerSyncService:
 
     def sync_containers(self, environment_id: str, containers_dto: list[PublishedContainerSnapshotDTO]) -> list[PublishedContainer]:
         synced_containers = []
+        incoming_api_ids = {dto.api_local_container_id for dto in containers_dto}
+
+        # 1. Expurgo de Contêineres Órfãos
+        existing_containers = self.repository.list_by_environment(environment_id)
+        orphaned_containers = [
+            c for c in existing_containers 
+            if c.api_local_container_id not in incoming_api_ids
+        ]
+        
+        if orphaned_containers:
+            from app.services.container_cleanup_service import ContainerCleanupService
+            cleanup_service = ContainerCleanupService(self.db)
+            cleanup_service.cleanup_orphaned_containers(environment_id, orphaned_containers)
 
         for container_dto in containers_dto:
             existing = self.repository.get_by_api_local_id(environment_id, container_dto.api_local_container_id)

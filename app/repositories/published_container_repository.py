@@ -19,6 +19,13 @@ class PublishedContainerRepository:
             )
         )
 
+    def list_by_environment(self, environment_id: str) -> list[PublishedContainer]:
+        return list(
+            self.db.scalars(
+                select(PublishedContainer).where(PublishedContainer.environment_id == environment_id)
+            ).all()
+        )
+
     def create(
         self,
         *,
@@ -38,6 +45,10 @@ class PublishedContainerRepository:
         self.db.add(container)
         self.db.flush()
         return container
+
+    def delete(self, container: PublishedContainer) -> None:
+        self.db.delete(container)
+        self.db.flush()
 
     def update(
         self,
