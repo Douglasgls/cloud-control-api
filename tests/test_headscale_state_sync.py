@@ -94,12 +94,15 @@ async def test_sync_no_changes_idempotency(db_session):
         tailscale_ip="100.64.0.10",
         online=True,
         registered=True,
+        last_seen=None,
     )
     db_session.add(db_node)
     db_session.commit()
 
+    mock_node = create_sample_api_node("10", "env_env-1", True, "100.64.0.10")
+    mock_node.lastSeen = None
     mock_client = MagicMock()
-    mock_client.list_nodes.return_value = HeadscaleNodeListDTO(nodes=[create_sample_api_node("10", "env_env-1", True, "100.64.0.10")])
+    mock_client.list_nodes.return_value = HeadscaleNodeListDTO(nodes=[mock_node])
 
     mock_conn_manager = MagicMock()
     mock_conn_manager.is_connected.return_value = True
@@ -173,18 +176,23 @@ async def test_sync_environment_isolation(db_session):
     env_b = Environment(id="env-B", user_id=2, name="Env B", environment_token_hash="hB")
     user_b = DbHeadscaleUser(id="hu-B", environment_id="env-B", headscale_user_id="uB", name="env_env-B")
 
-    node_a = DbHeadscaleNode(id="db-nA", headscale_node_id="100", headscale_user_id="hu-A", machine_key="mkey_100", hostname="test-node", tailscale_ip="100.64.0.100", online=True, registered=True)
-    node_b = DbHeadscaleNode(id="db-nB", headscale_node_id="200", headscale_user_id="hu-B", machine_key="mkey_200", hostname="test-node", tailscale_ip="100.64.0.200", online=True, registered=True)
+    node_a = DbHeadscaleNode(id="db-nA", headscale_node_id="100", headscale_user_id="hu-A", machine_key="mkey_100", hostname="test-node", given_name="test-node", tailscale_ip="100.64.0.100", online=True, registered=True, last_seen=None)
+    node_b = DbHeadscaleNode(id="db-nB", headscale_node_id="200", headscale_user_id="hu-B", machine_key="mkey_200", hostname="test-node", given_name="test-node", tailscale_ip="100.64.0.200", online=True, registered=True, last_seen=None)
 
 
     db_session.add_all([env_a, user_a, env_b, user_b, node_a, node_b])
     db_session.commit()
 
     # Headscale API: nodeA went offline, nodeB unchanged
+    mock_node_a = create_sample_api_node("100", "env_env-A", False, "100.64.0.100")
+    mock_node_a.lastSeen = None
+    mock_node_b = create_sample_api_node("200", "env_env-B", True, "100.64.0.200")
+    mock_node_b.lastSeen = None
+
     mock_client = MagicMock()
     mock_client.list_nodes.return_value = HeadscaleNodeListDTO(nodes=[
-        create_sample_api_node("100", "env_env-A", False, "100.64.0.100"),
-        create_sample_api_node("200", "env_env-B", True, "100.64.0.200"),
+        mock_node_a,
+        mock_node_b,
     ])
 
     mock_conn_manager = MagicMock()
