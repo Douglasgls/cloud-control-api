@@ -23,6 +23,13 @@ class HeadscaleNodeRepository:
             select(HeadscaleNode).where(HeadscaleNode.published_container_id == published_container_id)
         )
 
+    def list_by_container(self, published_container_id: str) -> list[HeadscaleNode]:
+        return list(
+            self.db.scalars(
+                select(HeadscaleNode).where(HeadscaleNode.published_container_id == published_container_id)
+            ).all()
+        )
+
     def get_by_environment(self, environment_id: str) -> list[HeadscaleNode]:
         return list(
             self.db.scalars(
