@@ -78,6 +78,18 @@ class NetworkEndpointSyncService:
 
         # Find existing endpoint
         existing = self.repository.get_by_container_id(published_container_id)
+        conflict = self.repository.get_by_dns_name(dns_name)
+
+        if conflict and existing and conflict.id != existing.id:
+            logger.info(f"[NETWORK ENDPOINT] Deleting conflicting endpoint '{dns_name}' (id: {conflict.id})")
+            self.db.delete(conflict)
+            self.db.flush()
+            conflict = None
+
+        if not existing and conflict:
+            logger.info(f"[NETWORK ENDPOINT] Reassigning endpoint '{dns_name}' to container {published_container_id}")
+            conflict.published_container_id = published_container_id
+            existing = conflict
 
         if existing:
             # Update endpoint attributes
