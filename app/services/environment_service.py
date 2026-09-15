@@ -86,3 +86,24 @@ class EnvironmentService:
 
         self.environments.delete(environment)
 
+    def unregister_agent(self, environment_id: str) -> None:
+        """
+        Remove o ambiente de forma idempotente. Chamado pelo próprio Agent via API.
+        Ignora erro se o ambiente não for encontrado (já removido).
+        """
+        environment = self.environments.get_by_id(environment_id)
+        if not environment:
+            return  # Idempotente: já não existe mais.
+
+        try:
+            from app.services.headscale.provisioning_service import HeadscaleProvisioningService
+            provisioning_service = HeadscaleProvisioningService(self.db)
+            provisioning_service.remove_environment(environment_id)
+        except Exception as e:
+            logger.warning(f"Erro ao remover ambiente '{environment_id}' do Headscale durante unregister: {e}")
+            # Não falha a operação de unregister do banco de dados
+
+        self.environments.delete(environment)
+
+
+
